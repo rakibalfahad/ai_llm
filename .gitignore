@@ -1,0 +1,18 @@
+# Large data files and model artifacts
+deeplearning/data/
+deeplearning/docker_data/*.tar
+deeplearning/docker_data/*.tar.gz
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+
+# Misc
+.DS_Store
+*.log
