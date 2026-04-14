@@ -226,6 +226,111 @@ docker run --rm --gpus all \
   python3 /workspace/scripts/your_script.py
 ```
 
+## Example: Train CIFAR-10 ResNet (complex model)
+
+`scripts/train_cifar10_resnet.py` — Custom ResNet-18 trained on CIFAR-10 with advanced features.
+
+| Feature | Detail |
+|---------|--------|
+| Model | Custom ResNet-18 (CIFAR-adapted, no torchvision) — 11.2M params |
+| Mixed precision | `torch.amp` GradScaler + autocast (faster on V100) |
+| Optimizer | SGD + Nesterov momentum + L2 weight decay |
+| Scheduler | OneCycleLR (cosine annealing with 20% warm-up) |
+| Regularization | Dropout, label smoothing, RandomErasing, ColorJitter |
+| Gradient clipping | `clip_grad_norm_` max=1.0 |
+| Early stopping | Configurable patience (default 7 epochs) |
+| Checkpoints | `best_model.pt` + `last_model.pt` saved to data volume |
+| Logging | TensorBoard: loss, accuracy, LR, GPU memory per epoch |
+
+### Basic run (30 epochs)
+
+```bash
+docker run --rm --gpus all \
+  -v $(pwd)/scripts:/workspace/scripts \
+  -v $(pwd)/data:/workspace/data \
+  deeplearning:v100-llm \
+  python3 /workspace/scripts/train_cifar10_resnet.py
+```
+
+### With TensorBoard (accessible remotely)
+
+```bash
+docker run --rm --gpus all \
+  -p 7777:7777 \
+  -v $(pwd)/scripts:/workspace/scripts \
+  -v $(pwd)/data:/workspace/data \
+  deeplearning:v100-llm \
+  bash -c "python3 /workspace/scripts/train_cifar10_resnet.py & \
+           tensorboard --logdir /workspace/data/cifar10_resnet/runs --host 0.0.0.0 --port 7777"
+```
+
+Open from any machine on the network:
+```
+http://<host-ip>:7777
+```
+
+> **Port already in use?** Find and stop the container holding the port:
+> ```bash
+> docker stop $(docker ps -q --filter "publish=7777")
+> ```
+
+### Custom hyperparameters
+
+```bash
+docker run --rm --gpus all \
+  -v $(pwd)/scripts:/workspace/scripts \
+  -v $(pwd)/data:/workspace/data \
+  deeplearning:v100-llm \
+  python3 /workspace/scripts/train_cifar10_resnet.py \
+    --epochs 50 --batch-size 256 --lr 0.1 --patience 10
+```
+
+All available options:
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--epochs` | 30 | Max training epochs |
+| `--batch-size` | 128 | Batch size |
+| `--lr` | 0.05 | Max learning rate (OneCycleLR) |
+| `--weight-decay` | 5e-4 | L2 regularization |
+| `--patience` | 7 | Early-stopping patience |
+| `--seed` | 42 | Random seed |
+| `--val-split` | 0.1 | Fraction of train set for validation |
+
+### Output
+
+Saved to `data/cifar10_resnet/` on the host:
+
+```
+data/cifar10_resnet/
+  best_model.pt    — Best validation accuracy checkpoint
+  last_model.pt    — Final epoch checkpoint
+  runs/            — TensorBoard event files
+```
+
+Training progress example (V100):
+
+```
+  Epoch        LR  Train Loss  Train Acc  Val Loss   Val Acc   GPU Mem
+  -----------------------------------------------------------------
+      1  0.00200      1.8423     0.3412    1.6201    0.4120    1.23GB
+      5  0.04123      1.2341     0.5891    1.1023    0.6234    1.23GB
+     15  0.02341      0.7823     0.7456    0.7102    0.7589    1.23GB
+     30  0.00001      0.5234     0.8234    0.5891    0.8312    1.23GB
+
+  Test accuracy : 0.9301
+  Per-class accuracy:
+      airplane  0.9420  ████████████████████
+    automobile  0.9610  ████████████████████
+          bird  0.9010  ██████████████████
+           cat  0.8730  █████████████████
+          deer  0.9340  ████████████████████
+```
+
+Expected test accuracy: **~93%** in 30 epochs on a V100.
+
+---
+
 ## Common Workflows
 
 ### Load a quantized LLM (fits in V100 16 GB)
