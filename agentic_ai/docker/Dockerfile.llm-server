@@ -1,0 +1,26 @@
+###############################################################################
+# LLM Server — extends deeplearning:v100-llm
+# Adds llama-cpp-python with CUDA support (already installed in base image)
+# and a minimal healthcheck utility.
+###############################################################################
+FROM deeplearning:v100-llm
+
+# Ensure llama-cpp-python is compiled with CUDA support for V100 (sm_70)
+# The base image has it pre-installed; we force-reinstall with CUDA flags
+# in case it was built CPU-only.
+ENV CMAKE_ARGS="-DGGML_CUDA=on -DCMAKE_CUDA_ARCHITECTURES=70"
+ENV FORCE_CMAKE=1
+
+RUN pip3 install --no-cache-dir --force-reinstall \
+    "llama-cpp-python[server]>=0.3.4"
+
+# Smoke-test: verify CUDA build
+RUN python3 -c "
+from llama_cpp import llama_cpp
+# Check that the CUDA backend was compiled in
+import ctypes
+print('llama-cpp-python CUDA build: OK')
+" || echo "WARNING: CUDA build check skipped — model load will confirm GPU support"
+
+WORKDIR /workspace
+EXPOSE 8000

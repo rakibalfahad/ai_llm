@@ -16,3 +16,8 @@ __pycache__/
 # Misc
 .DS_Store
 *.log
+
+# agentic_ai — secrets and large model weights
+agentic_ai/config/.env
+agentic_ai/models/*.gguf
+agentic_ai/models/*.bin

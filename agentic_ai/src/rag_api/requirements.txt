@@ -1,0 +1,32 @@
+fastapi==0.115.6
+uvicorn[standard]==0.32.1
+httpx==0.28.1
+pydantic==2.10.3
+pydantic-settings==2.7.0
+
+# Redis — distributed LLM slot queue
+# asyncio support is included via the [asyncio] extra (uses hiredis for speed)
+redis[asyncio,hiredis]==5.2.1
+
+# RAG / embeddings
+langchain==0.3.13
+langchain-community==0.3.13
+langchain-chroma==0.1.4
+chromadb==0.5.23
+sentence-transformers==3.3.1
+huggingface-hub==0.27.0
+
+# Document loaders
+pypdf==5.1.0
+unstructured[md]==0.16.11
+nbformat==5.10.4
+
+# Web search — internet retrieval for the assistant
+# duckduckgo-search: free, no API key required
+# tavily-python: optional premium provider (set TAVILY_API_KEY in .env)
+duckduckgo-search==6.3.7
+tavily-python==0.5.0
+
+# Utilities
+python-multipart==0.0.20
+tenacity==9.0.0

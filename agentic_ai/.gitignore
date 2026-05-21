@@ -1,0 +1,11 @@
+# agentic_ai secrets and sensitive data — never commit these
+config/.env
+docker/nginx/ssl/
+models/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+*.log
+backups/

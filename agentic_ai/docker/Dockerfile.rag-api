@@ -1,0 +1,28 @@
+###############################################################################
+# RAG API — lightweight FastAPI container
+# Does NOT need a GPU (embeddings run on CPU here to save VRAM for the LLM).
+# Set EMBEDDING_DEVICE=cuda in .env to enable GPU embeddings if desired.
+###############################################################################
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# System deps for sentence-transformers and pypdf
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        curl build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY src/rag_api/requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -r /app/requirements.txt
+
+# Application code (also volume-mounted for dev hot-reload)
+COPY src/rag_api/ /app/
+COPY src/scripts/ /app/scripts/
+
+# Create data directories
+RUN mkdir -p /app/data/enterprise_docs /app/data/code
+
+EXPOSE 8080
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", \
+     "--workers", "1", "--log-level", "info"]
